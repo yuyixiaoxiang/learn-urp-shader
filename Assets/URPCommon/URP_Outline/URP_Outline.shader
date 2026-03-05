@@ -1,6 +1,30 @@
 Shader "ELEX/URP/CommonEffects/Outline"
 {
-    Properties
+    
+
+/*
+Moved From: ShaderCommonEffects_URP.md
+Section: URP_Outline.shader
+
+- 一句话：模型外轮廓线。
+- 视觉效果：角色描边、交互高亮边框。
+- 核心原理：
+1. 描边 Pass：顶点沿法线膨胀
+2. `Cull Front` 只画背面
+3. Base Pass 再画本体
+- 关键参数：
+- `_OutlineWidth`：线宽
+- `_OutlineColor`：线色
+- 常见坑：
+- 模型法线不平滑会导致描边抖动
+- 核心代码：
+
+```hlsl
+posWS += normalWS * _OutlineWidth;
+Cull Front
+```
+*/
+Properties
     {
         [MainTexture] _BaseMap ("Base Map", 2D) = "white" {} // 主纹理采样源；用于定义物体表面图案，且支持 Inspector 的 Tiling/Offset（通过 _BaseMap_ST 参与 UV 变换）。
         [MainColor] _BaseColor ("Base Color", Color) = (1, 1, 1, 1) // 主颜色乘子；与主纹理结果相乘，统一控制整体染色与亮度（RGBA 都会参与）。
@@ -141,3 +165,5 @@ Shader "ELEX/URP/CommonEffects/Outline"
         }
     }
 }
+
+

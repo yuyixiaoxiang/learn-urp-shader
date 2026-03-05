@@ -1,6 +1,30 @@
 Shader "ELEX/URP/CommonEffects/FresnelTransparent"
 {
-    Properties
+    
+
+/*
+Moved From: ShaderCommonEffects_URP.md
+Section: URP_FresnelTransparent.shader
+
+- 一句话：透明物体边缘更实更亮。
+- 视觉效果：玻璃/力场的轮廓更明显。
+- 核心原理：
+1. 用 Fresnel 得到边缘权重
+2. 同时加到颜色和 alpha
+- 关键参数：
+- `_Alpha`：基础透明
+- `_FresnelAlphaBoost`：边缘额外不透明
+- `_FresnelPower`：边缘宽窄
+- 常见坑：
+- alpha 太低会导致主体几乎看不见
+- 核心代码：
+
+```hlsl
+half fresnel = pow(1.0 - saturate(dot(N, V)), _FresnelPower);
+half finalA = saturate(baseCol.a * _Alpha + fresnel * _FresnelAlphaBoost);
+```
+*/
+Properties
     {
         [MainTexture] _BaseMap ("Base Map", 2D) = "white" {} // 主纹理采样源；用于定义物体表面图案，且支持 Inspector 的 Tiling/Offset（通过 _BaseMap_ST 参与 UV 变换）。
         [MainColor] _BaseColor ("Base Color", Color) = (1, 1, 1, 1) // 主颜色乘子；与主纹理结果相乘，统一控制整体染色与亮度（RGBA 都会参与）。
@@ -103,3 +127,5 @@ Shader "ELEX/URP/CommonEffects/FresnelTransparent"
         }
     }
 }
+
+

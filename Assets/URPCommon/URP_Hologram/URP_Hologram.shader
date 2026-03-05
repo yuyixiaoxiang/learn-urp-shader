@@ -1,6 +1,32 @@
 Shader "ELEX/URP/CommonEffects/Hologram"
 {
-    Properties
+    
+
+/*
+Moved From: ShaderCommonEffects_URP.md
+Section: URP_Hologram.shader
+
+- 一句话：全息投影风格。
+- 视觉效果：扫描线 + 轮廓发亮 + 闪烁。
+- 核心原理：
+1. 世界 y + 时间生成扫描线
+2. Fresnel 做边缘高亮
+3. sin 做轻微闪烁
+- 关键参数：
+- `_ScanDensity`：扫描线密度
+- `_ScanSpeed`：扫描线移动速度
+- `_RimPower`：边缘宽度
+- `_FlickerSpeed`：闪烁速度
+- 常见坑：
+- 过度闪烁会影响可读性
+- 核心代码：
+
+```hlsl
+float line = frac(input.positionWS.y * _ScanDensity + _Time.y * _ScanSpeed);
+half rim = pow(1.0 - saturate(dot(N, V)), _RimPower);
+```
+*/
+Properties
     {
         [MainTexture] _BaseMap ("Base Map", 2D) = "white" {} // 主纹理采样源；用于定义物体表面图案，且支持 Inspector 的 Tiling/Offset（通过 _BaseMap_ST 参与 UV 变换）。
         [MainColor] _BaseColor ("Base Color", Color) = (0.3, 0.8, 1.0, 1) // 主颜色乘子；与主纹理结果相乘，统一控制整体染色与亮度（RGBA 都会参与）。
@@ -120,3 +146,5 @@ Shader "ELEX/URP/CommonEffects/Hologram"
         }
     }
 }
+
+

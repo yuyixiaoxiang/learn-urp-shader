@@ -1,6 +1,31 @@
 Shader "ELEX/URP/CommonEffects/UnlitTexture"
 {
-    Properties
+    
+
+/*
+Moved From: ShaderCommonEffects_URP.md
+Section: URP_UnlitTexture.shader
+
+- 一句话：最基础贴图显示，不受灯光影响。
+- 视觉效果：灯光再亮再暗，物体颜色基本不变。
+- 核心原理：
+1. 采样 `_BaseMap`
+2. 乘 `_BaseColor`
+3. 直接输出
+- 关键参数：
+- `_BaseMap`：主贴图
+- `_BaseColor`：整体染色和透明度
+- 常见坑：
+- 觉得“太平”，这是正常的，因为没有光照
+- 核心代码：
+
+```hlsl
+half4 baseCol = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv);
+baseCol *= _BaseColor;
+return baseCol;
+```
+*/
+Properties
     {
         [MainTexture] _BaseMap ("Base Map", 2D) = "white" {} // 主纹理采样源；用于定义物体表面图案，且支持 Inspector 的 Tiling/Offset（通过 _BaseMap_ST 参与 UV 变换）。
         [MainColor] _BaseColor ("Base Color", Color) = (1, 1, 1, 1) // 主颜色乘子；与主纹理结果相乘，统一控制整体染色与亮度（RGBA 都会参与）。
@@ -85,3 +110,5 @@ Shader "ELEX/URP/CommonEffects/UnlitTexture"
         }
     }
 }
+
+

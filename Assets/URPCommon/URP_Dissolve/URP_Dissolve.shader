@@ -1,6 +1,31 @@
 Shader "ELEX/URP/CommonEffects/Dissolve"
 {
-    Properties
+    
+
+/*
+Moved From: ShaderCommonEffects_URP.md
+Section: URP_Dissolve.shader
+
+- 一句话：按噪声图逐步溶解消失。
+- 视觉效果：像烧毁、蒸发、传送。
+- 核心原理：
+1. 噪声决定“哪块先消失”
+2. `clip(noise - threshold)` 删除像素
+3. 阈值边缘加发光色
+- 关键参数：
+- `_Dissolve`：进度（0 到 1）
+- `_EdgeWidth`：边缘带宽度
+- `_EdgeColor/_EdgeIntensity`：边缘视觉
+- 常见坑：
+- 噪声图太平会导致效果单调
+- 核心代码：
+
+```hlsl
+clip(noise - _Dissolve);
+float edgeMask = 1.0 - smoothstep(_Dissolve, _Dissolve + _EdgeWidth, noise);
+```
+*/
+Properties
     {
         [MainTexture] _BaseMap ("Base Map", 2D) = "white" {} // 主纹理采样源；用于定义物体表面图案，且支持 Inspector 的 Tiling/Offset（通过 _BaseMap_ST 参与 UV 变换）。
         [MainColor] _BaseColor ("Base Color", Color) = (1, 1, 1, 1) // 主颜色乘子；与主纹理结果相乘，统一控制整体染色与亮度（RGBA 都会参与）。
@@ -105,3 +130,5 @@ Shader "ELEX/URP/CommonEffects/Dissolve"
         }
     }
 }
+
+

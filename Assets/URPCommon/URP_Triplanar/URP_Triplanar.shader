@@ -1,6 +1,29 @@
 Shader "ELEX/URP/CommonEffects/Triplanar"
 {
-    Properties
+    
+
+/*
+Moved From: ShaderCommonEffects_URP.md
+Section: URP_Triplanar.shader
+
+- 一句话：不依赖 UV 的三向投影贴图。
+- 视觉效果：岩石地形不拉伸、接缝少。
+- 核心原理：
+1. 分别在 X/Y/Z 平面采样
+2. 按法线方向权重混合
+- 关键参数：
+- `_Tiling`：世界空间密度
+- `_BlendSharpness`：三个方向过渡软硬
+- 常见坑：
+- 条纹图案会在不同方向看出拼接感
+- 核心代码：
+
+```hlsl
+float3 w = pow(abs(N), _BlendSharpness);
+w /= max(w.x + w.y + w.z, 1e-5);
+```
+*/
+Properties
     {
         [MainTexture] _BaseMap ("Base Map", 2D) = "white" {} // 主纹理采样源；用于定义物体表面图案，且支持 Inspector 的 Tiling/Offset（通过 _BaseMap_ST 参与 UV 变换）。
         [MainColor] _BaseColor ("Base Color", Color) = (1, 1, 1, 1) // 主颜色乘子；与主纹理结果相乘，统一控制整体染色与亮度（RGBA 都会参与）。
@@ -109,3 +132,5 @@ Shader "ELEX/URP/CommonEffects/Triplanar"
         }
     }
 }
+
+

@@ -1,6 +1,30 @@
 Shader "ELEX/URP/CommonEffects/RimFresnel"
 {
-    Properties
+    
+
+/*
+Moved From: ShaderCommonEffects_URP.md
+Section: URP_RimFresnel.shader
+
+- 一句话：轮廓边缘发亮。
+- 视觉效果：物体外圈有“包边高光”。
+- 核心原理：
+1. 计算视线 `V` 与法线 `N` 的 dot
+2. 越靠边（dot 小）亮度越高
+3. 幂函数控制衰减曲线
+- 关键参数：
+- `_RimPower`：边缘范围
+- `_RimIntensity`：亮度
+- `_RimColor`：边缘颜色
+- 常见坑：
+- 强度过高会发白溢出
+- 核心代码：
+
+```hlsl
+half rim = pow(1.0 - saturate(dot(N, V)), _RimPower) * _RimIntensity;
+```
+*/
+Properties
     {
         [MainTexture] _BaseMap ("Base Map", 2D) = "white" {} // 主纹理采样源；用于定义物体表面图案，且支持 Inspector 的 Tiling/Offset（通过 _BaseMap_ST 参与 UV 变换）。
         [MainColor] _BaseColor ("Base Color", Color) = (1, 1, 1, 1) // 主颜色乘子；与主纹理结果相乘，统一控制整体染色与亮度（RGBA 都会参与）。
@@ -100,3 +124,5 @@ Shader "ELEX/URP/CommonEffects/RimFresnel"
         }
     }
 }
+
+

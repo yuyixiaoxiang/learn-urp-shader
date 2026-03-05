@@ -1,6 +1,31 @@
 Shader "ELEX/URP/CommonEffects/LitLambert"
 {
-    Properties
+    
+
+/*
+Moved From: ShaderCommonEffects_URP.md
+Section: URP_LitLambert.shader
+
+- 一句话：最标准的“朝光面亮、背光面暗”。
+- 视觉效果：基础真实感，适合入门受光物体。
+- 核心原理：
+1. `N = 法线`，`L = 光方向`
+2. 计算 `NdotL = max(0, dot(N,L))`
+3. 主光 + 附加光 + 环境光叠加
+- 关键参数：
+- `_BaseMap`：颜色细节
+- `_BaseColor`：整体亮度色调
+- 常见坑：
+- 模型法线错误会导致亮暗反转
+- 核心代码：
+
+```hlsl
+half ndotl = saturate(dot(N, mainLight.direction));
+half3 diffuse = albedo * mainLight.color * ndotl;
+half3 ambient = SampleSH(N) * albedo;
+```
+*/
+Properties
     {
         [MainTexture] _BaseMap ("Base Map", 2D) = "white" {} // 主纹理采样源；用于定义物体表面图案，且支持 Inspector 的 Tiling/Offset（通过 _BaseMap_ST 参与 UV 变换）。
         [MainColor] _BaseColor ("Base Color", Color) = (1, 1, 1, 1) // 主颜色乘子；与主纹理结果相乘，统一控制整体染色与亮度（RGBA 都会参与）。
@@ -119,3 +144,5 @@ Shader "ELEX/URP/CommonEffects/LitLambert"
         }
     }
 }
+
+

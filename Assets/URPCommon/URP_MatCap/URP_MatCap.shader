@@ -1,6 +1,30 @@
 Shader "ELEX/URP/CommonEffects/MatCap"
 {
-    Properties
+    
+
+/*
+Moved From: ShaderCommonEffects_URP.md
+Section: URP_MatCap.shader
+
+- 一句话：用一张 MatCap 贴图快速模拟材质光感。
+- 视觉效果：金属/陶瓷/泥塑等风格化反射感。
+- 核心原理：
+1. 世界法线 -> 观察空间法线
+2. 用 `normalVS.xy` 当 matcap 的 UV
+3. 采样 matcap 乘到基础色
+- 关键参数：
+- `_MatCapTex`：风格核心
+- `_MatCapStrength`：影响强度
+- 常见坑：
+- matcap 图质量决定上限
+- 核心代码：
+
+```hlsl
+float3 normalVS = normalize(TransformWorldToViewDir(input.normalWS, true));
+float2 matcapUV = normalVS.xy * 0.5 + 0.5;
+```
+*/
+Properties
     {
         [MainTexture] _BaseMap ("Base Map", 2D) = "white" {} // 主纹理采样源；用于定义物体表面图案，且支持 Inspector 的 Tiling/Offset（通过 _BaseMap_ST 参与 UV 变换）。
         _MatCapTex ("MatCap Texture", 2D) = "gray" {} // MatCap 纹理；基于视角法线查表得到“假环境反射/高光”外观。
@@ -97,3 +121,5 @@ Shader "ELEX/URP/CommonEffects/MatCap"
         }
     }
 }
+
+

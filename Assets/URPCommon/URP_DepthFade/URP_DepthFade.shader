@@ -1,6 +1,31 @@
 Shader "ELEX/URP/CommonEffects/DepthFade"
 {
-    Properties
+    
+
+/*
+Moved From: ShaderCommonEffects_URP.md
+Section: URP_DepthFade.shader
+
+- 一句话：特效与地面交界变柔和。
+- 视觉效果：烟雾/能量贴地处不再硬切。
+- 核心原理：
+1. 读取场景深度
+2. 计算与当前片元深度差
+3. 差小则透明度更低
+- 关键参数：
+- `_FadeDistance`：衰减距离
+- `_Alpha`：基础透明
+- 常见坑：
+- 没开 `Depth Texture` 会失效
+- 核心代码：
+
+```hlsl
+float sceneEye = LinearEyeDepth(SampleSceneDepth(screenUV), _ZBufferParams);
+float fragEye = -TransformWorldToView(input.positionWS).z;
+float fade = saturate((sceneEye - fragEye) / _FadeDistance);
+```
+*/
+Properties
     {
         [MainTexture] _BaseMap ("Base Map", 2D) = "white" {} // 主纹理采样源；用于定义物体表面图案，且支持 Inspector 的 Tiling/Offset（通过 _BaseMap_ST 参与 UV 变换）。
         [MainColor] _BaseColor ("Base Color", Color) = (1, 1, 1, 1) // 主颜色乘子；与主纹理结果相乘，统一控制整体染色与亮度（RGBA 都会参与）。
@@ -100,3 +125,5 @@ Shader "ELEX/URP/CommonEffects/DepthFade"
         }
     }
 }
+
+

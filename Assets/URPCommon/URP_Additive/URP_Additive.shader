@@ -1,6 +1,26 @@
 Shader "ELEX/URP/CommonEffects/Additive"
 {
-    Properties
+    
+
+/*
+Moved From: ShaderCommonEffects_URP.md
+Section: URP_Additive.shader
+
+- 一句话：发光叠加。
+- 视觉效果：火焰、魔法、爆炸余辉。
+- 核心原理：源色直接加到背景色。
+- 关键参数：
+- `_Intensity`：发光强度
+- 常见坑：
+- 亮背景里效果会变弱（因为本来就很亮）
+- 核心代码：
+
+```hlsl
+Blend One One
+baseCol.rgb *= _Intensity;
+```
+*/
+Properties
     {
         [MainTexture] _BaseMap ("Base Map", 2D) = "white" {} // 主纹理采样源；用于定义物体表面图案，且支持 Inspector 的 Tiling/Offset（通过 _BaseMap_ST 参与 UV 变换）。
         [MainColor] _BaseColor ("Base Color", Color) = (1, 1, 1, 1) // 主颜色乘子；与主纹理结果相乘，统一控制整体染色与亮度（RGBA 都会参与）。
@@ -85,3 +105,5 @@ Shader "ELEX/URP/CommonEffects/Additive"
         }
     }
 }
+
+

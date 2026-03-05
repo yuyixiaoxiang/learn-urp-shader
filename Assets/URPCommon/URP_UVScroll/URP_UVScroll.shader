@@ -1,6 +1,25 @@
 Shader "ELEX/URP/CommonEffects/UVScroll"
 {
-    Properties
+    
+
+/*
+Moved From: ShaderCommonEffects_URP.md
+Section: URP_UVScroll.shader
+
+- 一句话：贴图按固定速度滚动。
+- 视觉效果：水流、能量流、云层流动。
+- 核心原理：`uv = uv + speed * time`
+- 关键参数：
+- `_ScrollX / _ScrollY`：滚动速度方向
+- 常见坑：
+- 贴图边缘不无缝会“接缝跳变”
+- 核心代码：
+
+```hlsl
+float2 uv = input.uv + float2(_ScrollX, _ScrollY) * _Time.y;
+```
+*/
+Properties
     {
         [MainTexture] _BaseMap ("Base Map", 2D) = "white" {} // 主纹理采样源；用于定义物体表面图案，且支持 Inspector 的 Tiling/Offset（通过 _BaseMap_ST 参与 UV 变换）。
         [MainColor] _BaseColor ("Base Color", Color) = (1, 1, 1, 1) // 主颜色乘子；与主纹理结果相乘，统一控制整体染色与亮度（RGBA 都会参与）。
@@ -86,3 +105,5 @@ Shader "ELEX/URP/CommonEffects/UVScroll"
         }
     }
 }
+
+

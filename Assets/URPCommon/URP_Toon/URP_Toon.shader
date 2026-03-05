@@ -1,6 +1,31 @@
 Shader "ELEX/URP/CommonEffects/Toon"
 {
-    Properties
+    
+
+/*
+Moved From: ShaderCommonEffects_URP.md
+Section: URP_Toon.shader
+
+- 一句话：把连续光照变成分段光照，做卡通风。
+- 视觉效果：明暗分层明显，边界干净。
+- 核心原理：
+1. 先得到 `ndotl`
+2. 用 `floor` 量化成若干台阶
+3. 在阴影色和亮色间插值
+- 关键参数：
+- `_RampSteps`：层数，2~4 常用
+- `_ShadowColor`：暗部颜色
+- `_ShadowThreshold/_ShadowSmooth`：单阈值模式时控制边缘
+- 常见坑：
+- 阶梯太少会“跳层”严重
+- 核心代码：
+
+```hlsl
+half ramp = floor(ndotl * steps) / max(1.0, steps - 1.0);
+half3 toonTint = lerp(_ShadowColor.rgb, 1.0, ramp);
+```
+*/
+Properties
     {
         [MainTexture] _BaseMap ("Base Map", 2D) = "white" {} // 主纹理采样源；用于定义物体表面图案，且支持 Inspector 的 Tiling/Offset（通过 _BaseMap_ST 参与 UV 变换）。
         [MainColor] _BaseColor ("Base Color", Color) = (1, 1, 1, 1) // 主颜色乘子；与主纹理结果相乘，统一控制整体染色与亮度（RGBA 都会参与）。
@@ -126,3 +151,5 @@ Shader "ELEX/URP/CommonEffects/Toon"
         }
     }
 }
+
+

@@ -1,6 +1,30 @@
 Shader "ELEX/URP/CommonEffects/ScreenDistortion"
 {
-    Properties
+    
+
+/*
+Moved From: ShaderCommonEffects_URP.md
+Section: URP_ScreenDistortion.shader
+
+- 一句话：扭曲后面的屏幕画面。
+- 视觉效果：热浪、空气扰动、隐身波纹。
+- 核心原理：
+1. 读取扭曲贴图的偏移向量
+2. 偏移屏幕 UV
+3. 采样 `OpaqueTexture`
+- 关键参数：
+- `_DistortStrength`：扭曲幅度
+- `_DistortSpeedX/Y`：流动速度
+- 常见坑：
+- 没开 `Opaque Texture` 会失效
+- 核心代码：
+
+```hlsl
+float2 distortion = (noiseRG * 2 - 1) * _DistortStrength;
+half3 sceneCol = SampleSceneColor(screenUV + distortion);
+```
+*/
+Properties
     {
         _DistortTex ("Distortion Texture", 2D) = "gray" {} // 扭曲贴图；通常使用噪声 RG 作为屏幕采样偏移向量来源。
         [MainColor] _TintColor ("Tint Color", Color) = (1, 1, 1, 1) // 染色颜色；对扭曲后的场景色做乘色，同时其 alpha 参与最终透明度。
@@ -101,3 +125,5 @@ Shader "ELEX/URP/CommonEffects/ScreenDistortion"
         }
     }
 }
+
+

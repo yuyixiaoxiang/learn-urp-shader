@@ -1,6 +1,31 @@
 Shader "ELEX/URP/CommonEffects/NormalMapLambert"
 {
-    Properties
+    
+
+/*
+Moved From: ShaderCommonEffects_URP.md
+Section: URP_NormalMapLambert.shader
+
+- 一句话：在 Lambert 上加法线贴图，凹凸感更明显。
+- 视觉效果：模型面数不高，也会有细节起伏。
+- 核心原理：
+1. 法线贴图采样得到 `normalTS`（切线空间）
+2. 通过 TBN 转到世界空间 `normalWS`
+3. 用 `normalWS` 参与 Lambert
+- 关键参数：
+- `_NormalMap`：法线贴图
+- `_NormalScale`：法线强度，越高凹凸越明显
+- 常见坑：
+- 法线贴图导入类型要设为 Normal Map
+- 模型要有正确 tangent
+- 核心代码：
+
+```hlsl
+half3 normalTS = UnpackNormalScale(texNormal, _NormalScale);
+half3 N = normalize(T * normalTS.x + B * normalTS.y + N0 * normalTS.z);
+```
+*/
+Properties
     {
         [MainTexture] _BaseMap ("Base Map", 2D) = "white" {} // 主纹理采样源；用于定义物体表面图案，且支持 Inspector 的 Tiling/Offset（通过 _BaseMap_ST 参与 UV 变换）。
         [MainColor] _BaseColor ("Base Color", Color) = (1, 1, 1, 1) // 主颜色乘子；与主纹理结果相乘，统一控制整体染色与亮度（RGBA 都会参与）。
@@ -128,3 +153,5 @@ Shader "ELEX/URP/CommonEffects/NormalMapLambert"
         }
     }
 }
+
+

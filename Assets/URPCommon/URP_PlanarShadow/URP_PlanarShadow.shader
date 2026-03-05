@@ -1,6 +1,37 @@
 Shader "ELEX/URP/CommonEffects/PlanarShadow"
 {
-    Properties
+    
+
+/*
+Moved From: ShaderCommonEffects_URP.md
+Section: URP_PlanarShadow.shader
+
+- 一句话：把模型投影到一个平面上形成“假阴影”。
+- 视觉效果：角色脚下稳定阴影，性能低成本。
+- 核心原理（这是重点）：
+1. 定义平面：`dot(n, x) + d = 0`
+2. 给定顶点 `p` 与投影方向 `v`（光方向）
+3. 求 `p + v*t` 落在平面上时的 `t`
+4. 得到投影点 `p'`
+5. 沿法线抬一点 `_ShadowBias`，防止 Z-fighting
+6. 按原顶点离平面距离做透明衰减
+- 关键参数：
+- `_UseMainLight`：1 用主方向光，0 用 `_LightDirWS`
+- `_PlaneNormal` / `_PlaneOffset`：定义平面
+- `_ShadowBias`：防穿插抖动
+- `_FadeDistance`：离平面越远阴影越淡
+- 常见坑：
+- 光方向与平面几乎平行时阴影会拉很长（代码已做保护，但视觉上仍需调光）
+- 非平面地形不适合单平面阴影
+- 核心代码：
+
+```hlsl
+float t = -(dot(planeN, posWS) + planeOffset) / dot(planeN, castDir);
+float3 projectedWS = posWS + castDir * t;
+projectedWS += planeN * _ShadowBias;
+```
+*/
+Properties
     {
         [HDR] _ShadowColor ("Shadow Color", Color) = (0, 0, 0, 0.5) // 阴影颜色；用于平面投影阴影或卡通暗部着色（alpha 影响透明度）。
         _PlaneNormal ("Plane Normal (WS)", Vector) = (0, 1, 0, 0) // 平面法线（世界空间）；定义接收投影阴影的平面朝向。
@@ -120,3 +151,5 @@ Shader "ELEX/URP/CommonEffects/PlanarShadow"
         }
     }
 }
+
+

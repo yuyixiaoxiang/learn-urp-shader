@@ -1,6 +1,27 @@
 Shader "ELEX/URP/CommonEffects/AlphaBlend"
 {
-    Properties
+    
+
+/*
+Moved From: ShaderCommonEffects_URP.md
+Section: URP_AlphaBlend.shader
+
+- 一句话：标准透明混合。
+- 视觉效果：玻璃、薄膜、半透明物体。
+- 核心原理：
+- 输出时按 `srcA` 与背景混合
+- 关键参数：
+- `_Alpha`：整体透明度
+- 常见坑：
+- 多个透明物体互相穿插时排序不完美（常见）
+- 核心代码：
+
+```hlsl
+Blend SrcAlpha OneMinusSrcAlpha
+baseCol.a *= _Alpha;
+```
+*/
+Properties
     {
         [MainTexture] _BaseMap ("Base Map", 2D) = "white" {} // 主纹理采样源；用于定义物体表面图案，且支持 Inspector 的 Tiling/Offset（通过 _BaseMap_ST 参与 UV 变换）。
         [MainColor] _BaseColor ("Base Color", Color) = (1, 1, 1, 1) // 主颜色乘子；与主纹理结果相乘，统一控制整体染色与亮度（RGBA 都会参与）。
@@ -84,3 +105,5 @@ Shader "ELEX/URP/CommonEffects/AlphaBlend"
         }
     }
 }
+
+

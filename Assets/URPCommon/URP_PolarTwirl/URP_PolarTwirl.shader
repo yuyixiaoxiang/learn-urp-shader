@@ -1,6 +1,31 @@
 Shader "ELEX/URP/CommonEffects/PolarTwirl"
 {
-    Properties
+    
+
+/*
+Moved From: ShaderCommonEffects_URP.md
+Section: URP_PolarTwirl.shader
+
+- 一句话：中心旋涡扭曲。
+- 视觉效果：黑洞、能量门、法阵扭曲。
+- 核心原理：
+1. 计算像素到中心的距离
+2. 距离越近旋转角越大
+3. 旋转 UV 后采样
+- 关键参数：
+- `_Center`：扭曲中心
+- `_TwirlStrength`：扭曲强度
+- `_Radius`：影响半径
+- 常见坑：
+- 半径太小几乎看不出效果
+- 核心代码：
+
+```hlsl
+float angle = _TwirlStrength * saturate(1.0 - dist / _Radius);
+float2 rotated = float2(offset.x * c - offset.y * s, offset.x * s + offset.y * c);
+```
+*/
+Properties
     {
         [MainTexture] _BaseMap ("Base Map", 2D) = "white" {} // 主纹理采样源；用于定义物体表面图案，且支持 Inspector 的 Tiling/Offset（通过 _BaseMap_ST 参与 UV 变换）。
         [MainColor] _BaseColor ("Base Color", Color) = (1, 1, 1, 1) // 主颜色乘子；与主纹理结果相乘，统一控制整体染色与亮度（RGBA 都会参与）。
@@ -100,3 +125,5 @@ Shader "ELEX/URP/CommonEffects/PolarTwirl"
         }
     }
 }
+
+
