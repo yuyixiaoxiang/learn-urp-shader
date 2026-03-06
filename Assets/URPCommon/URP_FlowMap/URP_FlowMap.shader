@@ -99,27 +99,55 @@ Properties
             {
                 /*
                 算法原理（FlowMap）：
-                1) FlowMap 的 RG 表示 UV 流向（先映射到 [-1, 1]）
-                2) 用两相位采样（phase0/phase1）并交替混合，降低跳变
-                3) 常用于岩浆、水流、能量表面
+                1) 从 FlowMap 读取 RG（0~1），映射到 UV 偏移方向（-1~1）
+                2) 用时间相位驱动 UV 位移，让底图看起来“在流动”
+                3) 使用双相位（phase0/phase1）交替混合，掩盖单相位循环回卷的跳变
+                4) 常用于岩浆、水流、能量表面
 
                 核心公式：
                 flow = (flowRG * 2 - 1) * _FlowStrength
-                uv' = uv + flow * phase
+                phase0 = frac(_Time.y * _FlowSpeed)
+                phase1 = frac(phase0 + 0.5)
+                uv0 = uv + flow * phase0
+                uv1 = uv + flow * phase1
+                final = lerp(sample(uv0), sample(uv1), blend)
+
+                函数说明：
+                - SAMPLE_TEXTURE2D(tex, sampler, uv)：按 uv 从纹理采样颜色
+                - frac(x)：取小数部分，范围 [0,1)，用于周期循环
+                - abs(x)：绝对值，这里把线性相位变成三角波混合权重
+                - lerp(a, b, t)：线性插值，返回 a*(1-t) + b*t
+
+                返回语义：
+                - SV_Target：当前像素输出到渲染目标（颜色缓冲）
                 */
+                // _FlowMap_ST.xy = Tiling，_FlowMap_ST.zw = Offset（只作用于 FlowMap 的采样坐标）
                 float2 flowUV = input.uv * _FlowMap_ST.xy + _FlowMap_ST.zw;
+
+                // 读取 flow map 的 RG 通道并从 [0,1] 解码到 [-1,1] 作为二维流向向量
                 float2 flow = SAMPLE_TEXTURE2D(_FlowMap, sampler_FlowMap, flowUV).rg * 2.0 - 1.0;
+
+                // 流动强度：放大或缩小 UV 偏移量
                 flow *= _FlowStrength;
 
+                // phase0：主相位（0->1 循环）。_Time.y 是秒级时间，_FlowSpeed 控制流速
                 float phase0 = frac(_Time.y * _FlowSpeed);
+
+                // phase1：与 phase0 错开半个周期（+0.5），用于双相位交替
                 float phase1 = frac(phase0 + 0.5);
+
+                // 混合权重（三角波）：phase0=0/1 时权重大，phase0=0.5 时权重小
+                // 这样可在一个相位回卷时，用另一个相位“接力”，降低跳变感
                 float blend = abs(phase0 * 2.0 - 1.0);
 
+                // 同一张底图，用两个相位各采样一次
                 float2 uv0 = input.uv + flow * phase0;
                 float2 uv1 = input.uv + flow * phase1;
 
                 half4 col0 = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv0);
                 half4 col1 = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv1);
+
+                // 交叉混合两相位结果，再乘主颜色
                 half4 finalCol = lerp(col0, col1, blend) * _BaseColor;
                 return finalCol;
             }
