@@ -442,3 +442,220 @@ float fresnel = pow(1.0 - saturate(dot(N, V)), _FresnelPower);
 
 - 看到“亮边”不一定是丁达尔，很多时候那是菲涅尔或描边。
 - 丁达尔效果通常需要介质参与；没有雾尘等介质，光路一般不可见。
+
+## URP 中的 Pass（通俗版）
+
+### 1. 先用一句话区分两个常见 Pass
+
+- `ShadowCaster`：给“灯光”看的，决定物体怎么写入阴影贴图（Shadow Map）。
+- `DepthOnly`：给“相机”看的，决定物体怎么写入相机深度纹理（Camera Depth Texture）。
+
+可以把它们理解成两张不同用途的“轮廓图”：
+
+- 阴影轮廓图：供光照计算“哪里该暗”。
+- 深度轮廓图：供后处理/屏幕特效判断“哪里近哪里远”。
+
+### 2. 这两个 Pass 在渲染流程里什么时候执行
+
+- 渲染阴影贴图阶段，会查找 `LightMode = "ShadowCaster"` 的 Pass。
+- 生成相机深度纹理阶段，会查找 `LightMode = "DepthOnly"` 的 Pass。
+- 最后主画面颜色阶段才是 `UniversalForward`（或其他颜色 Pass）。
+
+所以它们不是“重复绘制颜色”，而是提前写“辅助数据”。
+
+### 3. `ShadowCaster` Pass 原理（独立）
+
+典型关键点：
+
+- `Tags { "LightMode"="ShadowCaster" }`
+- `ZWrite On`
+- `ZTest LEqual`
+- `ColorMask 0`
+
+#### 3.1 为什么 `ColorMask 0`
+
+- 阴影贴图核心是“深度关系”，不是颜色。
+- 所以这个 Pass 不需要写入 RGB/A，直接关闭颜色写入更高效。
+
+#### 3.2 顶点阶段在做什么
+
+典型逻辑：
+
+- 物体空间顶点、法线 -> 世界空间。
+- 根据光源类型算光方向：
+- 平行光：直接用 `_LightDirection`。
+- 点光/聚光：用 `normalize(_LightPosition - positionWS)`。
+- 应用 `ApplyShadowBias`，减少阴影痤疮（Shadow Acne）。
+- 把结果变换到光源裁剪空间（用于写阴影图深度）。
+
+通俗讲：把模型“从光的视角重新投影”一遍。
+
+#### 3.3 片元阶段在做什么
+
+- 若是实体不透明：通常直接写深度即可。
+- 若是 Cutout / Dither：先做 `clip`（按 alpha 或抖动阈值裁剪），通过的像素才写阴影深度。
+
+结果：阴影轮廓会和可见轮廓保持一致，避免“画面镂空但阴影整块”的穿帮。
+
+#### 3.4 这个 Pass 解决了什么问题
+
+如果没有 `ShadowCaster`（或裁剪规则与主 Pass 不一致），常见现象是：
+
+- 画面看着已经半透明/镂空了；
+- 但阴影还是实体整块，违和感很强。
+
+### 4. `DepthOnly` Pass 原理（独立）
+
+典型关键点：
+
+- `Tags { "LightMode"="DepthOnly" }`
+- `ZWrite On`
+- `ColorMask R`
+
+#### 4.1 为什么叫 DepthOnly
+
+- 它的目标是写“深度信息”，不是颜色信息。
+- 管线后续很多效果会读取这张深度图（例如雾、景深、软粒子、部分屏幕空间特效）。
+
+#### 4.2 顶点阶段在做什么
+
+典型逻辑：
+
+- 顶点从物体空间变换到相机裁剪空间 `TransformObjectToHClip`。
+- 如需 alpha/cutout 判断，会把 UV 传到片元阶段。
+
+通俗讲：把模型“从相机视角投影”一遍，准备写深度。
+
+#### 4.3 片元阶段在做什么
+
+- 若是实体不透明：直接写深度。
+- 若是 Cutout / Dither：先执行 `clip`，再写深度值（常见为 `positionCS.z`）。
+
+这意味着：
+
+- 被裁掉的像素不会占深度。
+- 保留像素才会占深度。
+
+#### 4.4 这个 Pass 解决了什么问题
+
+如果没有 `DepthOnly`（或裁剪规则不一致），常见穿帮是：
+
+- 视觉上物体已经“透明很多”；
+- 但深度图里它仍像整块实心，导致雾/景深/软粒子等效果错误遮挡。
+
+### 5. 后续渲染如何依赖 Shadow Map 计算阴影（调用链）
+
+下面按“先写入 -> 再采样 -> 再参与光照”解释：
+
+#### 5.1 先写入 Shadow Map（ShadowCaster 阶段）
+
+- `ShadowCaster` Pass 把从光源视角看到的深度写进阴影图。
+- 主光阴影纹理会绑定到 `_MainLightShadowmapTexture`。
+- 额外光阴影纹理会绑定到 `_AdditionalLightsShadowmapTexture`。
+
+这一步只是在“存参考深度”，还没开始给主画面打阴影。
+
+#### 5.2 CPU 设置阴影接收所需全局参数
+
+阴影图写完后，URP 会把后续采样需要的参数推到全局常量：
+
+- 主光 world->shadow 矩阵：`_MainLightWorldToShadow`
+- 主光阴影参数：`_MainLightShadowParams`
+- 级联分割球参数（级联阴影时）
+- 软阴影采样偏移和阴影图尺寸参数
+
+额外光也会设置对应的矩阵数组/结构化缓冲和参数数组。
+
+通俗讲：CPU 告诉 shader“去哪里采样、怎么采样、采样要不要做软化”。
+
+#### 5.3 主渲染阶段先算当前像素的 `shadowCoord`
+
+在 `LitForwardPass` / `LitGBufferPass` 中，URP 会对每个像素（或插值后像素）计算：
+
+- `inputData.shadowCoord = TransformWorldToShadowCoord(inputData.positionWS);`
+
+如果是主光级联阴影，会先根据像素世界坐标决定属于哪个 cascade，再用对应矩阵变换。
+
+#### 5.4 用 `shadowCoord` 采样 Shadow Map 并做深度比较
+
+主光路径大致是：
+
+- `GetMainLight(...)`
+- `MainLightShadow(...)` 或 `MainLightRealtimeShadow(...)`
+- `SampleShadowmap(...)`
+
+`SampleShadowmap` 里会：
+
+- 做透视除法（需要时）
+- 用比较采样器读取 shadow map
+- 若开启软阴影，走 PCF 过滤（低/中/高质量）
+- 输出 `attenuation`（阴影衰减，0~1）
+
+语义上：
+
+- `1.0` 约等于“受光”
+- `0.0` 约等于“在阴影里”
+- 中间值对应软阴影过渡
+
+#### 5.5 实时阴影会和烘焙阴影/距离淡出做混合
+
+主光常见会走：
+
+- 实时阴影 `realtimeShadow`
+- 烘焙 shadowmask `bakedShadow`（如果启用）
+- 距离淡出 `shadowFade`
+
+最终通过 `MixRealtimeAndBakedShadows(...)` 得到阴影因子。
+
+#### 5.6 最终如何影响光照
+
+计算 BRDF 时，URP 会把阴影因子乘到直射光能量里：
+
+- `light.distanceAttenuation * light.shadowAttenuation`
+
+所以阴影本质上是“把该光源对该像素的直射贡献按比例压暗”。
+
+一句话公式可记为：
+
+- `FinalDirect = BRDF * LightColor * DistanceAtten * ShadowAtten`
+
+## URP DitherTransparent：Pass 落地与对齐
+
+本文对应文件：
+
+- `Assets/URPCommon/URP_DitherTransparent/URP_DitherTransparent.shader`
+
+### 1. 为什么此 Shader 要同时写 `ShadowCaster` 与 `DepthOnly`
+
+`DitherTransparent` 是屏幕门透明（Dither + Clip）方案，视觉上会“打孔”。
+为了避免阴影与深度和主画面不一致，需要在三个路径都用同一套裁剪规则：
+
+- `UniversalForward`（颜色）
+- `ShadowCaster`（阴影）
+- `DepthOnly`（深度）
+
+### 2. 关键实现：复用同一个 `ApplyDitherClip`
+
+当前做法是：
+
+- `Forward`、`ShadowCaster`、`DepthOnly` 都调用同一个 `ApplyDitherClip(...)`。
+
+好处是三种结果保持一致：
+
+- 眼睛看到的形状（颜色）
+- 灯光看到的形状（阴影）
+- 相机深度看到的形状（深度）
+
+一致性越高，越不容易出现“画面一个样，阴影/后处理另一个样”的断裂感。
+
+### 3. 常见现象与调参建议（针对 Dither）
+
+- `_Alpha` 降低：可见像素变少，透明感增强。
+- `_DitherScale` 提高：点阵更细密，颗粒感更细但可能更“闪”。
+- 运动时出现颗粒闪烁：这是屏幕门透明的典型特征，可用 TAA/后处理缓解。
+
+### 4. 快速排查清单
+
+- 阴影不对：先看是否命中了 `ShadowCaster` Pass。
+- 后处理遮挡不对：看相机是否启用深度纹理，是否命中了 `DepthOnly` Pass。
+- 形状不一致：检查三个 Pass 是否都调用同一个 `ApplyDitherClip`。
