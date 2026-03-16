@@ -659,3 +659,14 @@ float fresnel = pow(1.0 - saturate(dot(N, V)), _FresnelPower);
 - 阴影不对：先看是否命中了 `ShadowCaster` Pass。
 - 后处理遮挡不对：看相机是否启用深度纹理，是否命中了 `DepthOnly` Pass。
 - 形状不一致：检查三个 Pass 是否都调用同一个 `ApplyDitherClip`。
+
+## 相关阅读
+
+- SH 与 Ambient Probe 入门（小白版）：`docs/SH_AmbientProbe_Beginner.md`
+- 上述文档已包含：
+- `unity_SHAr/unity_SHBr/unity_SHC` 映射表
+- `PackSH` 索引级映射（`sh[c*9+i] -> unity_SH*`）
+- 从法线到环境光颜色的手算示例
+- 通俗数学原理（投影、卷积、低频截断）
+- `Cubemap -> SH9` 预处理伪代码与验收清单
+- 30 分钟速学路线与实战调试建议
